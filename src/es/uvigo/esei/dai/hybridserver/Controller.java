@@ -95,7 +95,7 @@ public class Controller {
 								.append("</a></li>");
 					}
 
-					content.append("</ul><p>Authors: Yomar Costa Orellana & José Manuel Viñas Cid</p></body></html>");
+					content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.setContent(content.toString());
 					response.setStatus(HTTPResponseStatus.S200);
 				} catch (RuntimeException e) { //Si hay un error en la consulta a la BD se devuelve un error 500
@@ -152,7 +152,7 @@ public class Controller {
 				if (dao.get(uuid) != null) {
 					dao.delete(uuid);
 					response.setContent(
-							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana & José Manuel Viñas Cid</p></body></html>");
+							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.setStatus(HTTPResponseStatus.S200);
 				} else { //Si no existe la pagina con el UUID se devuelve un error 404
 					response.setStatus(HTTPResponseStatus.S404);
