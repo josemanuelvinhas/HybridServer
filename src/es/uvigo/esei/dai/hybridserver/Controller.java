@@ -11,6 +11,7 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequestMethod;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
+import es.uvigo.esei.dai.hybridserver.http.MIME;
 
 public class Controller {
 
@@ -67,6 +68,7 @@ public class Controller {
 		if (resourceName.equals("")) { //Si no se pasa un nombre del recurso se devuelve la página principal
 			response.setContent(
 					"<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><ul><li><a href=\"/html\">HTML</a></li></ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
+			response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 			response.setStatus(HTTPResponseStatus.S200);
 			
 		} else if (resourceName.equals("html")) { //Si el recurso solicitado es html
@@ -77,6 +79,7 @@ public class Controller {
 				try {
 					if ((content = dao.get(uuid)) != null) {//Se solicita el contenido del UUID y si existe se devuelve dicho contenido
 						response.setContent(content);
+						response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 						response.setStatus(HTTPResponseStatus.S200);
 					} else { //Si no existe se devuelve un ERROR 404
 						response.setStatus(HTTPResponseStatus.S404);
@@ -97,6 +100,7 @@ public class Controller {
 
 					content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.setContent(content.toString());
+					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 					response.setStatus(HTTPResponseStatus.S200);
 				} catch (RuntimeException e) { //Si hay un error en la consulta a la BD se devuelve un error 500
 					response.setStatus(HTTPResponseStatus.S500);
@@ -127,7 +131,7 @@ public class Controller {
 				response.setContent(new StringBuilder(
 						"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><a href=\"html?uuid=")
 								.append(uuid).append("\">").append(uuid).append("</a></body></html>").toString());
-
+				response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 				response.setStatus(HTTPResponseStatus.S200);
 			} catch (RuntimeException e) {//Si hay un error en la consulta/insercion en la BD se devuelve un error 500
 				response.setStatus(HTTPResponseStatus.S500);
@@ -153,6 +157,7 @@ public class Controller {
 					dao.delete(uuid);
 					response.setContent(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
+					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 					response.setStatus(HTTPResponseStatus.S200);
 				} else { //Si no existe la pagina con el UUID se devuelve un error 404
 					response.setStatus(HTTPResponseStatus.S404);

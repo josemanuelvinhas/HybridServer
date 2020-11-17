@@ -25,13 +25,17 @@ public class DBDAO implements DAO {
 	public String get(String UUID) {
 		String sql = "SELECT * FROM HTML WHERE uuid = ?";
 		String toret = null;
-		
-		try (Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
-				PreparedStatement statement = connection.prepareStatement(sql)) {
+
+		try {
+			Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
+			PreparedStatement statement = connection.prepareStatement(sql);
 
 			statement.setString(1, UUID);
 
-			try (ResultSet result = statement.executeQuery()) {
+			try (ResultSet result = statement.executeQuery();
+					PreparedStatement statementClose = statement;
+					Connection connectionClose = connection) {
+
 				if (result.next()) {
 					toret = result.getString("content");
 				}
@@ -49,12 +53,19 @@ public class DBDAO implements DAO {
 		String sql = "SELECT uuid FROM HTML";
 		List<String> toret = new LinkedList<>();
 
-		try (Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
-				Statement statement = connection.createStatement();
-				ResultSet result = statement.executeQuery(sql)) {
+		try {
 
-			while (result.next()) {
-				toret.add(result.getString("uuid"));
+			Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
+			Statement statement = connection.createStatement();
+
+			try (ResultSet result = statement.executeQuery(sql);
+					Statement statementClose = statement;
+					Connection connectionClose = connection) {
+
+				while (result.next()) {
+					toret.add(result.getString("uuid"));
+				}
+
 			}
 
 		} catch (SQLException e) {
@@ -68,14 +79,20 @@ public class DBDAO implements DAO {
 	public void insert(String UUID, String content) {
 		String sql = "INSERT INTO HTML (uuid, content)" + "VALUES (?, ?)";
 
-		try (Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
-				PreparedStatement statement = connection.prepareStatement(sql)) {
+		try {
 
-			statement.setString(1, UUID);
-			statement.setString(2, content);
+			Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
 
-			if (statement.executeUpdate() != 1) {
-				throw new RuntimeException("Error inserting page");
+			try (PreparedStatement statement = connection.prepareStatement(sql);
+					Connection connectionClose = connection) {
+
+				statement.setString(1, UUID);
+				statement.setString(2, content);
+
+				if (statement.executeUpdate() != 1) {
+					throw new RuntimeException("Error inserting page");
+				}
+
 			}
 
 		} catch (SQLException e) {
@@ -87,13 +104,18 @@ public class DBDAO implements DAO {
 	public void delete(String UUID) {
 		String sql = "DELETE FROM HTML WHERE uuid = ?";
 
-		try (Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
-				PreparedStatement statement = connection.prepareStatement(sql)) {
+		try {
 
-			statement.setString(1, UUID);
+			Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
 
-			if (statement.executeUpdate() != 1) {
-				throw new RuntimeException("Error deleting page");
+			try (PreparedStatement statement = connection.prepareStatement(sql);
+					Connection connectionClose = connection) {
+
+				statement.setString(1, UUID);
+
+				if (statement.executeUpdate() != 1) {
+					throw new RuntimeException("Error deleting page");
+				}
 			}
 
 		} catch (SQLException e) {

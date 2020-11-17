@@ -74,13 +74,13 @@ public class HTTPResponse {
 		BufferedWriter br = new BufferedWriter(writer);
 		String firstLine = this.version + " " + this.status.getCode() + " " + this.status.getStatus();
 		br.write(firstLine);
-		br.newLine();
+		br.write("\r\n");
 
 		for (String key : this.parameters.keySet()) {
 			br.write(key + ": " + this.parameters.get(key));
-			br.newLine();
+			br.write("\r\n");
 		}
-		br.newLine();
+		br.write("\r\n");
 		br.write(this.content);
 		br.flush();
 	}
