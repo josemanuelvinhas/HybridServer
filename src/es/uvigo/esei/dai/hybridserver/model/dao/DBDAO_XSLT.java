@@ -1,4 +1,4 @@
-package es.uvigo.esei.dai.hybridserver.dao;
+package es.uvigo.esei.dai.hybridserver.model.dao;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,22 +9,25 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DBDAOHTML implements DAO {
+import es.uvigo.esei.dai.hybridserver.model.entity.Document;
+import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
+
+public class DBDAO_XSLT implements DAO {
 
 	private String db_url;
 	private String db_user;
 	private String db_password;
 
-	public DBDAOHTML(String db_url, String db_user, String db_password) {
+	public DBDAO_XSLT(String db_url, String db_user, String db_password) {
 		this.db_url = db_url;
 		this.db_user = db_user;
 		this.db_password = db_password;
 	}
 
 	@Override
-	public String get(String UUID) {
-		String sql = "SELECT * FROM HTML WHERE uuid = ?";
-		String toret = null;
+	public Document get(String UUID) {
+		String sql = "SELECT * FROM XSLT WHERE uuid = ?";
+		Document toret = null;
 
 		try {
 			Connection connection = DriverManager.getConnection(db_url, db_user, db_password);
@@ -37,7 +40,7 @@ public class DBDAOHTML implements DAO {
 					Connection connectionClose = connection) {
 
 				if (result.next()) {
-					toret = result.getString("content");
+					toret = new Document(UUID, result.getString("content"), result.getString("xsd"));
 				}
 			}
 
@@ -49,9 +52,9 @@ public class DBDAOHTML implements DAO {
 	}
 
 	@Override
-	public List<String> listPages() {
-		String sql = "SELECT uuid FROM HTML";
-		List<String> toret = new LinkedList<>();
+	public List<Document> listPages() {
+		String sql = "SELECT uuid FROM XSLT";
+		List<Document> toret = new LinkedList<>();
 
 		try {
 
@@ -63,7 +66,7 @@ public class DBDAOHTML implements DAO {
 					Connection connectionClose = connection) {
 
 				while (result.next()) {
-					toret.add(result.getString("uuid"));
+					toret.add(new Document(result.getString("uuid")));
 				}
 
 			}
@@ -75,9 +78,8 @@ public class DBDAOHTML implements DAO {
 		return toret;
 	}
 
-	@Override
-	public void insert(String UUID, String content) {
-		String sql = "INSERT INTO HTML (uuid, content)" + "VALUES (?, ?)";
+	public void insert(Document document) {
+		String sql = "INSERT INTO XSLT (uuid, content, xsd)" + "VALUES (?, ?, ?)";
 
 		try {
 
@@ -86,8 +88,9 @@ public class DBDAOHTML implements DAO {
 			try (PreparedStatement statement = connection.prepareStatement(sql);
 					Connection connectionClose = connection) {
 
-				statement.setString(1, UUID);
-				statement.setString(2, content);
+				statement.setString(1, document.getUUID());
+				statement.setString(2, document.getContent());
+				statement.setString(3, document.getXsd());
 
 				if (statement.executeUpdate() != 1) {
 					throw new RuntimeException("Error inserting page");
@@ -102,7 +105,7 @@ public class DBDAOHTML implements DAO {
 
 	@Override
 	public void delete(String UUID) {
-		String sql = "DELETE FROM HTML WHERE uuid = ?";
+		String sql = "DELETE FROM XSLT WHERE uuid = ?";
 
 		try {
 

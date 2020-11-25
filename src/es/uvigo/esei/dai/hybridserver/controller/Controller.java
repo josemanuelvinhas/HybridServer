@@ -73,7 +73,7 @@ public class Controller {
 
 		response.setVersion(HTTPHeaders.HTTP_1_1.getHeader());
 		response.setContent(
-				"<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><ul><li><a href=\"/html\">HTML</a></li></ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
+				"<!DOCTYPE html> <html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><ul><li><a href=\"/html\">HTML</a></li><li><a href=\"/xml\">XML</a></li><li><a href=\"/xsd\">XSD</a></li><li><a href=\"/xslt\">XSLT</a></li></ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 		response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 		response.setStatus(HTTPResponseStatus.S200);
 

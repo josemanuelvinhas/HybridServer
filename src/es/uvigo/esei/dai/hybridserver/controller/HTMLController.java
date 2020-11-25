@@ -3,14 +3,15 @@ package es.uvigo.esei.dai.hybridserver.controller;
 import java.util.UUID;
 
 import es.uvigo.esei.dai.hybridserver.DB;
-import es.uvigo.esei.dai.hybridserver.dao.DAO;
-import es.uvigo.esei.dai.hybridserver.dao.DBDAOHTML;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequestMethod;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
+import es.uvigo.esei.dai.hybridserver.model.dao.DBDAO_HTML;
+import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 
 public class HTMLController {
 	
@@ -19,7 +20,7 @@ public class HTMLController {
 	
 	public HTMLController(DB db, HTTPRequest request) {
 		this.request = request;
-		this.dao = new DBDAOHTML(db.getUrl(), db.getUser(), db.getPassword());
+		this.dao = new DBDAO_HTML(db.getUrl(), db.getUser(), db.getPassword());
 	}
 	
 	public HTTPResponse getResponse() {
@@ -54,10 +55,10 @@ public class HTMLController {
 		String uuid = request.getResourceParameters().get("uuid");
 
 		if (uuid != null) { //Si se pasa el parametro uuid
-			String content;
+			Document document;
 			try {
-				if ((content = dao.get(uuid)) != null) {//Se solicita el contenido del UUID y si existe se devuelve dicho contenido
-					response.setContent(content);
+				if ((document = dao.get(uuid)) != null) {//Se solicita el contenido del UUID y si existe se devuelve dicho contenido
+					response.setContent(document.getContent());
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 					response.setStatus(HTTPResponseStatus.S200);
 				} else { //Si no existe se devuelve un ERROR 404
@@ -72,8 +73,8 @@ public class HTMLController {
 					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - HTML</h1><h2>Pages List</h2><ul>");
 
 			try {
-				for (String page : dao.listPages()) {
-					content.append("<li><a href=\"/html?uuid=").append(page).append("\">").append(page)
+				for (Document page : dao.listPages()) {
+					content.append("<li><a href=\"/html?uuid=").append(page.getUUID()).append("\">").append(page.getUUID())
 							.append("</a></li>");
 				}
 
@@ -101,7 +102,7 @@ public class HTMLController {
 				do {
 					uuid = UUID.randomUUID().toString();
 				} while (dao.get(uuid) != null);
-				dao.insert(uuid, html);
+				dao.insert(new Document(uuid, html));
 
 				response.setContent(new StringBuilder(
 						"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><a href=\"html?uuid=")

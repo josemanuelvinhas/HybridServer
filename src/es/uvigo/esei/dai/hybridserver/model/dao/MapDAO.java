@@ -1,4 +1,4 @@
-package es.uvigo.esei.dai.hybridserver.dao;
+package es.uvigo.esei.dai.hybridserver.model.dao;
 
 import java.util.ArrayList;
 import java.util.List;
