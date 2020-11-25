@@ -9,13 +9,13 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
-public class DBDAO implements DAO {
+public class DBDAOHTML implements DAO {
 
 	private String db_url;
 	private String db_user;
 	private String db_password;
 
-	public DBDAO(String db_url, String db_user, String db_password) {
+	public DBDAOHTML(String db_url, String db_user, String db_password) {
 		this.db_url = db_url;
 		this.db_user = db_user;
 		this.db_password = db_password;

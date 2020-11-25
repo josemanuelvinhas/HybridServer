@@ -3,15 +3,10 @@ package es.uvigo.esei.dai.hybridserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import es.uvigo.esei.dai.hybridserver.dao.DAO;
-import es.uvigo.esei.dai.hybridserver.dao.DBDAO;
-import es.uvigo.esei.dai.hybridserver.dao.MapDAO;
 
 public class HybridServer {
 	private static final int SERVICE_PORT = 8888;
@@ -20,7 +15,7 @@ public class HybridServer {
 	private Thread serverThread;
 	private ExecutorService threadPool;
 	private boolean stop;
-	private DAO dao;
+	private DB db;
 	private int numClients;
 	private int port;
 	private String db_url;
@@ -33,14 +28,8 @@ public class HybridServer {
 		this.db_url = "jdbc:mysql://localhost:3306/hstestdb";
 		this.db_user = "hsdb";
 		this.db_password = "hsdbpass";
-
-		this.dao = new DBDAO(this.db_url, this.db_user, this.db_password);
-	}
-
-	public HybridServer(Map<String, String> pages) {
-		dao = new MapDAO(pages);
-		this.numClients = NUM_CLIENTS;
-		this.port = SERVICE_PORT;
+		
+		this.db = new DB(this.db_url, this.db_user, this.db_password);
 	}
 
 	public HybridServer(Properties properties) {
@@ -69,7 +58,7 @@ public class HybridServer {
 			throw new RuntimeException("Error: loading properties error");
 		}
 
-		this.dao = new DBDAO(this.db_url, this.db_user, this.db_password);
+		this.db = new DB(this.db_url, this.db_user, this.db_password);
 	}
 
 	public int getPort() {
@@ -88,7 +77,7 @@ public class HybridServer {
 						Socket socket = serverSocket.accept();
 						if (stop)
 							break;
-						threadPool.execute(new HybridServerServiceThread(socket, dao));
+						threadPool.execute(new HybridServerServiceThread(socket, db));
 					}
 
 				} catch (IOException e) {
