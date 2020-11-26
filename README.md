@@ -9,7 +9,7 @@ _TODO_
 
 ### Base de datos
 
-Se usa la base de datos _MariaDB 10.4.14_ de [XAMPP](https://www.apachefriends.org/). A través de _phpMyAdmin_ se puede crear la base de datos usando el siguiente script:
+Se usa el SGBD _MariaDB 10.4.14_ de [XAMPP](https://www.apachefriends.org/). A través de _phpMyAdmin_ se puede crear la base de datos usando el siguiente script:
 
 ```
 DROP DATABASE IF EXISTS hstestdb;
