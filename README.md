@@ -7,6 +7,42 @@ Este proyecto consistirá en el desarrollo de un sistema híbrido cliente/servid
 
 _TODO_
 
+### Base de datos
+
+Se usa la base de datos _MariaDB 10.4.14_ de [XAMPP](https://www.apachefriends.org/). A través de _phpMyAdmin_ se puede crear la base de datos usando el siguiente script:
+
+```
+DROP DATABASE IF EXISTS hstestdb;
+
+CREATE DATABASE hstestdb CHARACTER SET utf8mb4;
+
+USE hstestdb;
+
+CREATE TABLE HTML (
+  uuid char(36) PRIMARY KEY NOT NULL,
+  content text DEFAULT NULL
+);
+
+CREATE TABLE XML (
+  uuid char(36) PRIMARY KEY NOT NULL,
+  content text DEFAULT NULL
+);
+
+CREATE TABLE XSD (
+  uuid char(36) PRIMARY KEY NOT NULL,
+  content text DEFAULT NULL
+);
+
+CREATE TABLE XSLT (
+  uuid char(36) PRIMARY KEY NOT NULL,
+  content text DEFAULT NULL,
+  xsd char(36) DEFAULT NULL
+);
+
+
+grant all privileges on hstestdb.* to hsdb@localhost identified by "hsdbpass";
+```
+
 
 ## Construido con :hammer_and_wrench:
 
