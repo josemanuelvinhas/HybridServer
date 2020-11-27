@@ -137,7 +137,7 @@ public class XSLTController {
 		} else { // Si no se pasa el parametro UUID se devuelve una página con la lista de
 					// páginas
 			StringBuilder content = new StringBuilder(
-					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - HTML</h1><h2>Pages List</h2><ul>");
+					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XSLT</h1><h2>Pages List</h2><ul>");
 
 			try {
 				for (Document page : daoXSLT.listPages()) {
