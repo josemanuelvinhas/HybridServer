@@ -12,7 +12,7 @@
 			<head>
 				<title>HybridServer Configuration</title>
 				<link rel="stylesheet"
-					href="http://code.jquery.com/ui/1.10.3/themes/south-street/jquery-ui.css" />
+					href="https://code.jquery.com/ui/1.12.1/themes/cupertino/jquery-ui.css" />
 				<script
 					src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 				<script
