@@ -3,81 +3,102 @@ package es.uvigo.esei.dai.hybridserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.LinkedList;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HybridServer {
+	
 	private static final int SERVICE_PORT = 8888;
 	private static final int NUM_CLIENTS = 50;
+	private static final String DB_URL = "jdbc:mysql://localhost:3306/hstestdb";
+	private static final String DB_USER = "hsdb";
+	private static final String DB_PASSWORD = "hsdbpass";
+	private static final String WEB_SERVICE_URL = ""; //TODO Ver valor por defecto
 
 	private Thread serverThread;
 	private ExecutorService threadPool;
 	private boolean stop;
-	private DB db;
-	private int numClients;
-	private int port;
-	private String db_url;
-	private String db_user;
-	private String db_password;
+	
+	private Configuration configuration;
 
 	public HybridServer() {
-		this.numClients = NUM_CLIENTS;
-		this.port = SERVICE_PORT;
-		this.db_url = "jdbc:mysql://localhost:3306/hstestdb";
-		this.db_user = "hsdb";
-		this.db_password = "hsdbpass";
 		
-		this.db = new DB(this.db_url, this.db_user, this.db_password);
+		this.configuration = new Configuration();
+		
+		this.configuration.setNumClients(NUM_CLIENTS);
+		this.configuration.setHttpPort(SERVICE_PORT);
+		this.configuration.setDbURL(DB_URL);
+		this.configuration.setDbUser(DB_USER);
+		this.configuration.setDbPassword(DB_PASSWORD);
+		this.configuration.setServers(new LinkedList<ServerConfiguration>());
+		this.configuration.setWebServiceURL(WEB_SERVICE_URL);
 	}
 
+	public HybridServer(Configuration configuration) throws Exception {
+		this.configuration = configuration;
+	}
+	
 	public HybridServer(Properties properties) {
+		
+		this.configuration = new Configuration();
 
 		try {
-			this.numClients = Integer.parseInt(properties.getProperty("numClients"));
+			this.configuration.setNumClients(Integer.parseInt(properties.getProperty("numClients")));
 		} catch (NumberFormatException e) {
 			throw new RuntimeException("Error: loading properties error");
 		}
 
 		try {
-			this.port = Integer.parseInt(properties.getProperty("port"));
+			this.configuration.setHttpPort(Integer.parseInt(properties.getProperty("port")));
 		} catch (NumberFormatException e) {
 			throw new RuntimeException("Error: loading properties error");
 		}
 		
-		if((this.db_url = properties.getProperty("db.url")) == null) {
+		String db_url;
+		if((db_url = properties.getProperty("db.url")) == null) {
 			throw new RuntimeException("Error: loading properties error");
+		}else {
+			this.configuration.setDbURL(db_url);
 		}
 		
-		if((this.db_user = properties.getProperty("db.user")) == null) {
+		String db_user;
+		if((db_user = properties.getProperty("db.user")) == null) {
 			throw new RuntimeException("Error: loading properties error");
+		}else {
+			this.configuration.setDbUser(db_user);
 		}
 		
-		if((this.db_password = properties.getProperty("db.password")) == null) {
+		String db_password;
+		if((db_password = properties.getProperty("db.password")) == null) {
 			throw new RuntimeException("Error: loading properties error");
+		}else {
+			this.configuration.setDbPassword(db_password);
 		}
-
-		this.db = new DB(this.db_url, this.db_user, this.db_password);
+		
+		this.configuration.setServers(new LinkedList<ServerConfiguration>());
+		this.configuration.setWebServiceURL(WEB_SERVICE_URL);
 	}
 
 	public int getPort() {
-		return this.port;
+		return configuration.getHttpPort();
 	}
 
 	public void start() {
 		this.serverThread = new Thread() {
 			@Override
 			public void run() {
-				try (final ServerSocket serverSocket = new ServerSocket(port)) {
+				try (final ServerSocket serverSocket = new ServerSocket(configuration.getHttpPort())) {
 
-					threadPool = Executors.newFixedThreadPool(numClients);
+					threadPool = Executors.newFixedThreadPool(configuration.getNumClients());
 
 					while (true) {
 						Socket socket = serverSocket.accept();
 						if (stop)
 							break;
-						threadPool.execute(new HybridServerServiceThread(socket, db));
+						threadPool.execute(new HybridServerServiceThread(socket, configuration ));
 					}
 
 				} catch (IOException e) {
@@ -93,7 +114,7 @@ public class HybridServer {
 	public void stop() {
 		this.stop = true;
 
-		try (Socket socket = new Socket("localhost", this.port)) {
+		try (Socket socket = new Socket("localhost", configuration.getHttpPort())) {
 			// Esta conexión se hace, simplemente, para "despertar" el hilo servidor
 		} catch (IOException e) {
 			throw new RuntimeException(e);

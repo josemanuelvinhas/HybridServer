@@ -10,18 +10,18 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
-import es.uvigo.esei.dai.hybridserver.model.dao.DBDAO_HTML;
-import es.uvigo.esei.dai.hybridserver.model.dao.DBDAO_XML;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO_HTML;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XML;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 
 public class XMLController {
 	
 	private HTTPRequest request;
-	private DAO dao;
+	private DAO<Document> dao;
 
 	public XMLController(DB db, HTTPRequest request) {
 		this.request = request;
-		this.dao = new DBDAO_XML(db.getUrl(), db.getUser(), db.getPassword());
+		this.dao = new DAO_XML(db.getUrl(), db.getUser(), db.getPassword());
 	}
 
 	public HTTPResponse getResponse() {

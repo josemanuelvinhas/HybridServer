@@ -10,20 +10,21 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
-import es.uvigo.esei.dai.hybridserver.model.dao.DBDAO_XSD;
-import es.uvigo.esei.dai.hybridserver.model.dao.DBDAO_XSLT;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
+import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 
 public class XSLTController {
 
 	private HTTPRequest request;
-	private DAO daoXSLT;
-	private DAO daoXSD;
+	private DAO<DocumentXSLT> daoXSLT;
+	private DAO<Document> daoXSD;
 
 	public XSLTController(DB db, HTTPRequest request) {
 		this.request = request;
-		this.daoXSLT = new DBDAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
-		this.daoXSD = new DBDAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
+		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
+		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
 	}
 
 	public HTTPResponse getResponse() {
@@ -92,7 +93,7 @@ public class XSLTController {
 					do {
 						uuid = UUID.randomUUID().toString();
 					} while (daoXSLT.get(uuid) != null);
-					daoXSLT.insert(new Document(uuid, xslt, xsd));
+					daoXSLT.insert(new DocumentXSLT(uuid, xslt, xsd));
 
 					response.setContent(new StringBuilder(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><a href=\"xslt?uuid=")
@@ -120,7 +121,7 @@ public class XSLTController {
 		String uuid = request.getResourceParameters().get("uuid");
 
 		if (uuid != null) { // Si se pasa el parametro uuid
-			Document document;
+			DocumentXSLT document;
 			try {
 				if ((document = daoXSLT.get(uuid)) != null) {// Se solicita el contenido del UUID y si existe se
 																// devuelve dicho contenido
@@ -140,7 +141,7 @@ public class XSLTController {
 					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XSLT</h1><h2>Pages List</h2><ul>");
 
 			try {
-				for (Document page : daoXSLT.listPages()) {
+				for (DocumentXSLT page : daoXSLT.listPages()) {
 					content.append("<li><a href=\"/xslt?uuid=").append(page.getUUID()).append("\">")
 							.append(page.getUUID()).append("</a></li>");
 				}

@@ -11,13 +11,13 @@ import java.util.List;
 
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 
-public class DBDAO_XSD implements DAO {
+public class DAO_XML implements DAO<Document> {
 
 	private String db_url;
 	private String db_user;
 	private String db_password;
 
-	public DBDAO_XSD(String db_url, String db_user, String db_password) {
+	public DAO_XML(String db_url, String db_user, String db_password) {
 		this.db_url = db_url;
 		this.db_user = db_user;
 		this.db_password = db_password;
@@ -25,7 +25,7 @@ public class DBDAO_XSD implements DAO {
 
 	@Override
 	public Document get(String UUID) {
-		String sql = "SELECT * FROM XSD WHERE uuid = ?";
+		String sql = "SELECT * FROM XML WHERE uuid = ?";
 		Document toret = null;
 
 		try {
@@ -52,7 +52,7 @@ public class DBDAO_XSD implements DAO {
 
 	@Override
 	public List<Document> listPages() {
-		String sql = "SELECT uuid FROM XSD";
+		String sql = "SELECT uuid FROM XML";
 		List<Document> toret = new LinkedList<>();
 
 		try {
@@ -65,7 +65,7 @@ public class DBDAO_XSD implements DAO {
 					Connection connectionClose = connection) {
 
 				while (result.next()) {
-					toret.add(new Document(result.getString("uuid"), null));
+					toret.add(new Document(result.getString("uuid")));
 				}
 
 			}
@@ -79,7 +79,7 @@ public class DBDAO_XSD implements DAO {
 
 	@Override
 	public void insert(Document document) {
-		String sql = "INSERT INTO XSD (uuid, content)" + "VALUES (?, ?)";
+		String sql = "INSERT INTO XML (uuid, content)" + "VALUES (?, ?)";
 
 		try {
 
@@ -104,7 +104,7 @@ public class DBDAO_XSD implements DAO {
 
 	@Override
 	public void delete(String UUID) {
-		String sql = "DELETE FROM XSD WHERE uuid = ?";
+		String sql = "DELETE FROM XML WHERE uuid = ?";
 
 		try {
 

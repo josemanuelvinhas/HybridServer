@@ -10,11 +10,11 @@ import es.uvigo.esei.dai.hybridserver.controller.Controller;
 public class HybridServerServiceThread implements Runnable {
 
 	private Socket socket;
-	private DB db;
+	private Configuration configuration;
 
-	public HybridServerServiceThread(Socket socket, DB db) {
+	public HybridServerServiceThread(Socket socket, Configuration configuration) {
 		this.socket = socket;
-		this.db = db;
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -23,7 +23,9 @@ public class HybridServerServiceThread implements Runnable {
 				InputStreamReader isr = new InputStreamReader(socket.getInputStream());
 				OutputStreamWriter osr = new OutputStreamWriter(socket.getOutputStream())) {
 
-			new Controller(isr, osr, this.db).printResponse();
+			new Controller(isr, osr,
+					new DB(configuration.getDbURL(), configuration.getDbUser(), configuration.getDbPassword()))
+							.printResponse();
 
 		} catch (IOException e) {
 			System.out.println("Error serving a client");

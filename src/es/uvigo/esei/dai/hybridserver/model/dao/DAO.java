@@ -5,13 +5,13 @@ import java.util.List;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 
-public interface DAO {
+public interface DAO<T> {
 
-	public Document get(String UUID);
+	public T get(String UUID);
 
-	public List<Document> listPages();
+	public List<T> listPages();
 
-	public void insert(Document document);
+	public void insert(T t);
 
 	public void delete(String UUID);
 

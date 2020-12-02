@@ -10,15 +10,14 @@ import java.util.LinkedList;
 import java.util.List;
 
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
-import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 
-public class DBDAO_XSLT implements DAO {
+public class DAO_HTML implements DAO<Document> {
 
 	private String db_url;
 	private String db_user;
 	private String db_password;
 
-	public DBDAO_XSLT(String db_url, String db_user, String db_password) {
+	public DAO_HTML(String db_url, String db_user, String db_password) {
 		this.db_url = db_url;
 		this.db_user = db_user;
 		this.db_password = db_password;
@@ -26,7 +25,7 @@ public class DBDAO_XSLT implements DAO {
 
 	@Override
 	public Document get(String UUID) {
-		String sql = "SELECT * FROM XSLT WHERE uuid = ?";
+		String sql = "SELECT * FROM HTML WHERE uuid = ?";
 		Document toret = null;
 
 		try {
@@ -40,7 +39,7 @@ public class DBDAO_XSLT implements DAO {
 					Connection connectionClose = connection) {
 
 				if (result.next()) {
-					toret = new Document(UUID, result.getString("content"), result.getString("xsd"));
+					toret = new Document(UUID, result.getString("content"));
 				}
 			}
 
@@ -53,7 +52,7 @@ public class DBDAO_XSLT implements DAO {
 
 	@Override
 	public List<Document> listPages() {
-		String sql = "SELECT uuid FROM XSLT";
+		String sql = "SELECT uuid FROM HTML";
 		List<Document> toret = new LinkedList<>();
 
 		try {
@@ -78,8 +77,9 @@ public class DBDAO_XSLT implements DAO {
 		return toret;
 	}
 
+	@Override
 	public void insert(Document document) {
-		String sql = "INSERT INTO XSLT (uuid, content, xsd)" + "VALUES (?, ?, ?)";
+		String sql = "INSERT INTO HTML (uuid, content)" + "VALUES (?, ?)";
 
 		try {
 
@@ -90,7 +90,6 @@ public class DBDAO_XSLT implements DAO {
 
 				statement.setString(1, document.getUUID());
 				statement.setString(2, document.getContent());
-				statement.setString(3, document.getXsd());
 
 				if (statement.executeUpdate() != 1) {
 					throw new RuntimeException("Error inserting page");
@@ -105,7 +104,7 @@ public class DBDAO_XSLT implements DAO {
 
 	@Override
 	public void delete(String UUID) {
-		String sql = "DELETE FROM XSLT WHERE uuid = ?";
+		String sql = "DELETE FROM HTML WHERE uuid = ?";
 
 		try {
 
