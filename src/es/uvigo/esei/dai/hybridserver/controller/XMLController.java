@@ -1,6 +1,8 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -9,6 +11,7 @@ import javax.xml.transform.TransformerException;
 import org.xml.sax.SAXException;
 
 import es.uvigo.esei.dai.hybridserver.DB;
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequestMethod;
@@ -16,24 +19,27 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
-import es.uvigo.esei.dai.hybridserver.model.dao.DAO_HTML;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XML;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 import es.uvigo.esei.dai.hybridserver.parser.ParsingUtils;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerService;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class XMLController {
 
 	private HTTPRequest request;
-	private DAO<Document> daoHTML;
+	private DAO<Document> daoXML;
 	private DAO<DocumentXSLT> daoXSLT;
 	private DAO<Document> daoXSD;
+	private HybridServerServiceConnection hybridServerServiceConnection;
 
-	public XMLController(DB db, HTTPRequest request) {
+	public XMLController(DB db, HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
-		this.daoHTML = new DAO_XML(db.getUrl(), db.getUser(), db.getPassword());
+		this.hybridServerServiceConnection = hybridServerServiceConnection;
+		this.daoXML = new DAO_XML(db.getUrl(), db.getUser(), db.getPassword());
 		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
 		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
 	}
@@ -71,8 +77,30 @@ public class XMLController {
 		if ((uuid = request.getResourceParameters().get("uuid")) != null) { // Si el recurso es HTML y se la petición
 																			// contiene el uuid
 			try {
-				if (daoHTML.get(uuid) != null) {
-					daoHTML.delete(uuid);
+				boolean isDeleted = false;
+
+				// Borrado Local
+				if (daoXML.get(uuid) != null) {
+					daoXML.delete(uuid);
+					isDeleted = true;
+				}
+				
+				//Borrado P2P
+				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+						.getConnection();
+
+				Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+				HybridServerService hybridServerService;
+				while (servers.hasNext()) {
+					if ((hybridServerService = serversConnection.get(servers.next())) != null
+							&& hybridServerService.getXML(uuid) != null) {
+						hybridServerService.deleteXML(uuid);
+						isDeleted = true;
+					}
+				}
+
+				if (isDeleted) {
 					response.setContent(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -102,8 +130,8 @@ public class XMLController {
 				String uuid;
 				do {
 					uuid = UUID.randomUUID().toString();
-				} while (daoHTML.get(uuid) != null);
-				daoHTML.insert(new Document(uuid, xml));
+				} while (daoXML.get(uuid) != null);
+				daoXML.insert(new Document(uuid, xml));
 
 				response.setContent(new StringBuilder(
 						"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><a href=\"xml?uuid=")
@@ -129,9 +157,26 @@ public class XMLController {
 		if (uuid != null) { // Si se pasa el parametro uuid
 			Document document;
 			try {
-				if ((document = daoHTML.get(uuid)) != null) {// Se solicita el contenido del UUID y si existe se
-																// devuelve dicho contenido
+				
+				if ((document = daoXML.get(uuid)) == null) {//Si el documento no esta en local se busca en remoto
+					
+					Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+							.getConnection();
 
+					Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+					HybridServerService hybridServerService;
+					while (servers.hasNext() && document == null) {
+						if ((hybridServerService = serversConnection.get(servers.next())) != null
+								&& (document = hybridServerService.getXML(uuid)) != null) {
+							daoXML.insert(document);//Caché XML
+						}
+					}
+				}
+				
+				
+				
+				if (document != null) {// Si existe el XML
 					String xsltUUID = request.getResourceParameters().get("xslt");
 
 					if (xsltUUID == null) { // Si no se pasa xslt se devuelve xml
@@ -141,10 +186,42 @@ public class XMLController {
 
 					} else {// Si se pasa xslt se obtiene
 
-						DocumentXSLT documentoXSLT = daoXSLT.get(xsltUUID);
-						Document documentoXSD;
+						DocumentXSLT documentoXSLT; 
+						Document documentoXSD = null;
+						
+						if((documentoXSLT = daoXSLT.get(xsltUUID)) == null) {
+							//Buscar XSLT en remoto
+							Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+									.getConnection();
 
-						if (documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) != null) {
+							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+							HybridServerService hybridServerService;
+							while (servers.hasNext() && documentoXSLT == null) {
+								if ((hybridServerService = serversConnection.get(servers.next())) != null
+										&& (documentoXSLT = hybridServerService.getXSLT(uuid)) != null) {
+									this.daoXSLT.insert(documentoXSLT);//Caché
+								}
+							}
+						}
+						
+						if(documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) == null) {
+							//Buscar XSD en remoto
+							Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+									.getConnection();
+
+							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+							HybridServerService hybridServerService;
+							while (servers.hasNext() && documentoXSD == null) {
+								if ((hybridServerService = serversConnection.get(servers.next())) != null
+										&& (documentoXSD = hybridServerService.getXSD(uuid)) != null) {
+									this.daoXSD.insert(documentoXSD);//Caché
+								}
+							}
+						}
+
+						if (documentoXSLT != null && documentoXSD != null) {
 							try {
 								ParsingUtils.validateStringXMLWithStringXSD(document.getContent(),
 										documentoXSD.getContent());
@@ -161,7 +238,7 @@ public class XMLController {
 							} catch (TransformerException e) {
 								// TODO Ver que error devolver en caso de MALA TRANSFORMACION
 							}
-						}else {
+						} else {
 							response.setStatus(HTTPResponseStatus.S404);
 						}
 
@@ -177,11 +254,32 @@ public class XMLController {
 		} else { // Si no se pasa el parametro UUID se devuelve una página con la lista de
 					// páginas
 			StringBuilder content = new StringBuilder(
-					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XML</h1><h2>Pages List</h2><ul>");
+					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XML</h1><h2>Pages List</h2>");
 			try {
-				for (Document page : daoHTML.listPages()) {
+				content.append("<h3>Local Host</h3>");
+				content.append("<ul>");
+				for (Document page : daoXML.listPages()) {
 					content.append("<li><a href=\"/xml?uuid=").append(page.getUUID()).append("\">")
 							.append(page.getUUID()).append("</a></li>");
+				}
+				content.append("</ul>");
+
+				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+						.getConnection();
+
+				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
+					content.append("<h3>" + server.getName() + "</h3>");
+
+					HybridServerService hybridServerService = serversConnection.get(server);
+
+					if (hybridServerService != null) {
+						content.append("<ul>");
+						for (Document page : hybridServerService.listPagesXML()) {
+							content.append("<li><a href=\"/xml?uuid=").append(page.getUUID()).append("\">")
+									.append(page.getUUID()).append("</a></li>");
+						}
+						content.append("</ul>");
+					}
 				}
 
 				content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");

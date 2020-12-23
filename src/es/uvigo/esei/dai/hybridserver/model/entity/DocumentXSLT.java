@@ -6,6 +6,9 @@ public class DocumentXSLT {
 	private String content;
 	private String xsd;
 
+	public DocumentXSLT() {
+	}
+
 	public DocumentXSLT(String uuid, String content, String xsd) {
 		this.uuid = uuid;
 		this.content = content;

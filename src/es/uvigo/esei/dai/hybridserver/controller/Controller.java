@@ -11,17 +11,21 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponse;
 import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class Controller {
 
 	private InputStreamReader isr;
 	private OutputStreamWriter osr;
 	private DB db;
+	private HybridServerServiceConnection hybridServerServiceConnection;
 
-	public Controller(InputStreamReader isr, OutputStreamWriter osr, DB db) {
+	public Controller(InputStreamReader isr, OutputStreamWriter osr, DB db,
+			HybridServerServiceConnection hybridServerServiceConnection) {
 		this.isr = isr;
 		this.osr = osr;
 		this.db = db;
+		this.hybridServerServiceConnection = hybridServerServiceConnection;
 	}
 
 	public void printResponse() throws IOException {
@@ -49,16 +53,16 @@ public class Controller {
 			response = this.getResponseIndex();
 			break;
 		case "html":
-			response = new HTMLController(db, request).getResponse();
+			response = new HTMLController(db, hybridServerServiceConnection, request).getResponse();
 			break;
 		case "xml":
-			response = new XMLController(db, request).getResponse();
+			response = new XMLController(db, hybridServerServiceConnection, request).getResponse();
 			break;
 		case "xsd":
-			response = new XSDController(db, request).getResponse();
+			response = new XSDController(db, hybridServerServiceConnection, request).getResponse();
 			break;
 		case "xslt":
-			response = new XSLTController(db, request).getResponse();
+			response = new XSLTController(db, hybridServerServiceConnection, request).getResponse();
 			break;
 		default: // Si la petición se realiza a otro recurso
 			response = getResponseDefault();
@@ -82,7 +86,7 @@ public class Controller {
 
 	private HTTPResponse getResponseDefault() {
 		HTTPResponse response = new HTTPResponse();
-		
+
 		response.setVersion(HTTPHeaders.HTTP_1_1.getHeader());
 		response.setStatus(HTTPResponseStatus.S400);
 

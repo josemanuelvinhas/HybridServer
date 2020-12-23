@@ -5,6 +5,9 @@ public class Document {
 	private String uuid;
 	private String content;
 
+	public Document() {
+	}
+
 	public Document(String uuid, String content) {
 		this.uuid = uuid;
 		this.content = content;

@@ -2,9 +2,6 @@ package es.uvigo.esei.dai.hybridserver.model.dao;
 
 import java.util.List;
 
-import es.uvigo.esei.dai.hybridserver.model.entity.Document;
-import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
-
 public interface DAO<T> {
 
 	public T get(String UUID);

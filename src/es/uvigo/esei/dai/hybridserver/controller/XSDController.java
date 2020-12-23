@@ -12,13 +12,14 @@ import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class XSDController {
 
 	private HTTPRequest request;
 	private DAO<Document> dao;
 
-	public XSDController(DB db, HTTPRequest request) {
+	public XSDController(DB db,HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
 		this.dao = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
 	}

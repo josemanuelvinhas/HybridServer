@@ -14,6 +14,7 @@ import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class XSLTController {
 
@@ -21,7 +22,7 @@ public class XSLTController {
 	private DAO<DocumentXSLT> daoXSLT;
 	private DAO<Document> daoXSD;
 
-	public XSLTController(DB db, HTTPRequest request) {
+	public XSLTController(DB db, HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
 		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
 		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
