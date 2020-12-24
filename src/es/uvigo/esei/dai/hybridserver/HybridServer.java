@@ -9,25 +9,30 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.ws.Endpoint;
+
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceImpl;
+
 public class HybridServer {
-	
+
 	private static final int SERVICE_PORT = 8888;
 	private static final int NUM_CLIENTS = 50;
 	private static final String DB_URL = "jdbc:mysql://localhost:3306/hstestdb";
 	private static final String DB_USER = "hsdb";
 	private static final String DB_PASSWORD = "hsdbpass";
-	private static final String WEB_SERVICE_URL = ""; //TODO Ver valor por defecto
+	private static final String WEB_SERVICE_URL = null; //TODO preguntar url por defecto
 
 	private Thread serverThread;
 	private ExecutorService threadPool;
 	private boolean stop;
-	
+	private Endpoint endpoint;
+
 	private Configuration configuration;
 
 	public HybridServer() {
-		
+
 		this.configuration = new Configuration();
-		
+
 		this.configuration.setNumClients(NUM_CLIENTS);
 		this.configuration.setHttpPort(SERVICE_PORT);
 		this.configuration.setDbURL(DB_URL);
@@ -40,9 +45,9 @@ public class HybridServer {
 	public HybridServer(Configuration configuration) throws Exception {
 		this.configuration = configuration;
 	}
-	
+
 	public HybridServer(Properties properties) {
-		
+
 		this.configuration = new Configuration();
 
 		try {
@@ -56,28 +61,28 @@ public class HybridServer {
 		} catch (NumberFormatException e) {
 			throw new RuntimeException("Error: loading properties error");
 		}
-		
+
 		String db_url;
-		if((db_url = properties.getProperty("db.url")) == null) {
+		if ((db_url = properties.getProperty("db.url")) == null) {
 			throw new RuntimeException("Error: loading properties error");
-		}else {
+		} else {
 			this.configuration.setDbURL(db_url);
 		}
-		
+
 		String db_user;
-		if((db_user = properties.getProperty("db.user")) == null) {
+		if ((db_user = properties.getProperty("db.user")) == null) {
 			throw new RuntimeException("Error: loading properties error");
-		}else {
+		} else {
 			this.configuration.setDbUser(db_user);
 		}
-		
+
 		String db_password;
-		if((db_password = properties.getProperty("db.password")) == null) {
+		if ((db_password = properties.getProperty("db.password")) == null) {
 			throw new RuntimeException("Error: loading properties error");
-		}else {
+		} else {
 			this.configuration.setDbPassword(db_password);
 		}
-		
+
 		this.configuration.setServers(new LinkedList<ServerConfiguration>());
 		this.configuration.setWebServiceURL(WEB_SERVICE_URL);
 	}
@@ -87,6 +92,12 @@ public class HybridServer {
 	}
 
 	public void start() {
+
+		if(this.configuration.getWebServiceURL() != null) {
+			endpoint = Endpoint.publish(this.configuration.getWebServiceURL(),
+					new HybridServerServiceImpl(this.configuration));
+		}
+
 		this.serverThread = new Thread() {
 			@Override
 			public void run() {
@@ -98,7 +109,7 @@ public class HybridServer {
 						Socket socket = serverSocket.accept();
 						if (stop)
 							break;
-						threadPool.execute(new HybridServerServiceThread(socket, configuration ));
+						threadPool.execute(new HybridServerServiceThread(socket, configuration));
 					}
 
 				} catch (IOException e) {
@@ -135,5 +146,10 @@ public class HybridServer {
 		} catch (InterruptedException e) {
 			throw new RuntimeException(e);
 		}
+		
+		if(this.configuration.getWebServiceURL() != null) {
+			this.endpoint.stop();
+		}
+		
 	}
 }

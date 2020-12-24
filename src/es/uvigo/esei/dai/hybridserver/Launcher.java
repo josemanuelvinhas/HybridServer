@@ -12,7 +12,8 @@ public class Launcher {
 
 			File configuration = new File(args[0]);
 			try {
-				new HybridServer(new XMLConfigurationLoader().load(configuration)).start();
+				Configuration conf = new XMLConfigurationLoader().load(configuration);
+				new HybridServer(conf).start();
 			} catch (RuntimeException e) {
 				System.out.println(e.getMessage());
 			} catch (Exception e) {
@@ -20,7 +21,7 @@ public class Launcher {
 			}
 
 		} else {
-			System.out.println("Error (one argument max) try: java Launcher [Properties File Path]");
+			System.out.println("Error (one argument max) try: java Launcher [Configuration File Path]");
 		}
 
 	}

@@ -6,6 +6,7 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 
 import es.uvigo.esei.dai.hybridserver.controller.Controller;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class HybridServerServiceThread implements Runnable {
 
@@ -24,7 +25,8 @@ public class HybridServerServiceThread implements Runnable {
 				OutputStreamWriter osr = new OutputStreamWriter(socket.getOutputStream())) {
 
 			new Controller(isr, osr,
-					new DB(configuration.getDbURL(), configuration.getDbUser(), configuration.getDbPassword()))
+					new DB(configuration.getDbURL(), configuration.getDbUser(), configuration.getDbPassword()),
+					new HybridServerServiceConnection(configuration.getServers()))
 							.printResponse();
 
 		} catch (IOException e) {

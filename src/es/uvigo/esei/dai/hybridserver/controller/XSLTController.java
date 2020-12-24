@@ -1,8 +1,10 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
+import java.util.Map;
 import java.util.UUID;
 
 import es.uvigo.esei.dai.hybridserver.DB;
+import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequest;
 import es.uvigo.esei.dai.hybridserver.http.HTTPRequestMethod;
@@ -14,6 +16,7 @@ import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
 import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerService;
 import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class XSLTController {
@@ -21,9 +24,11 @@ public class XSLTController {
 	private HTTPRequest request;
 	private DAO<DocumentXSLT> daoXSLT;
 	private DAO<Document> daoXSD;
+	private HybridServerServiceConnection hybridServerServiceConnection;
 
 	public XSLTController(DB db, HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
+		this.hybridServerServiceConnection = hybridServerServiceConnection;
 		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
 		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
 	}
@@ -139,12 +144,34 @@ public class XSLTController {
 		} else { // Si no se pasa el parametro UUID se devuelve una página con la lista de
 					// páginas
 			StringBuilder content = new StringBuilder(
-					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XSLT</h1><h2>Pages List</h2><ul>");
+					"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server - XSLT</h1><h2>Pages List</h2>");
 
 			try {
+				content.append("<h3>Local Host</h3>");
+				content.append("<ul>");
 				for (DocumentXSLT page : daoXSLT.listPages()) {
 					content.append("<li><a href=\"/xslt?uuid=").append(page.getUUID()).append("\">")
 							.append(page.getUUID()).append("</a></li>");
+				}
+				content.append("</ul>");
+				
+				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+						.getConnection();
+
+				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
+					content.append("<h3>" + server.getName() + "</h3>");
+
+					HybridServerService hybridServerService = serversConnection.get(server);
+
+					if (hybridServerService != null) {
+						content.append("<ul>");
+						for (DocumentXSLT page : hybridServerService.listPagesXSLT()) {
+							content.append("<li><a href=\"/xslt?uuid=").append(page.getUUID()).append("\">").append(page.getUUID())
+									.append("</a></li>");
+						}
+						content.append("</ul>");
+					}
+
 				}
 
 				content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
