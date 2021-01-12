@@ -1,5 +1,6 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -65,8 +66,31 @@ public class XSLTController {
 
 		if ((uuid = request.getResourceParameters().get("uuid")) != null) { // Si la petición contiene el uuid
 			try {
+				boolean isDeleted = false;
+				
+				//Borrado local
 				if (daoXSLT.get(uuid) != null) {
 					daoXSLT.delete(uuid);
+					isDeleted = true;
+				}
+				
+				//Borrado P2P
+				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+						.getConnection();
+
+				Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+				HybridServerService hybridServerService;
+				while (servers.hasNext()) {
+					if ((hybridServerService = serversConnection.get(servers.next())) != null
+							&& hybridServerService.getXSLT(uuid) != null) {
+						hybridServerService.deleteXSLT(uuid);
+						isDeleted = true;
+					}
+				}
+				
+				// Si la pagina se ha borrado de algun servidor
+				if(isDeleted){
 					response.setContent(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -134,8 +158,29 @@ public class XSLTController {
 					response.setContent(document.getContent());
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
 					response.setStatus(HTTPResponseStatus.S200);
-				} else { // Si no existe se devuelve un ERROR 404
-					response.setStatus(HTTPResponseStatus.S404);
+				} else { // Si no existe se busca
+					Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
+							.getConnection();
+
+					Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+
+					HybridServerService hybridServerService;
+					while (servers.hasNext() && document == null) {
+						if ((hybridServerService = serversConnection.get(servers.next())) != null
+								&& (document = hybridServerService.getXSLT(uuid)) != null);
+					}
+					
+					if(document != null) {
+						
+						daoXSLT.insert(document);//Caché XSLT
+						
+						response.setContent(document.getContent());
+						response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
+						response.setStatus(HTTPResponseStatus.S200);
+					}else{// Si no existe se devuelve un ERROR 404
+						response.setStatus(HTTPResponseStatus.S404);
+					}
+					
 				}
 			} catch (RuntimeException e) { // Si hay un error en la consulta a la BD se devuelve un error 500
 				response.setStatus(HTTPResponseStatus.S500);

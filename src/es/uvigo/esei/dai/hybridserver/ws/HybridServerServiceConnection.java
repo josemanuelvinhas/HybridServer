@@ -31,9 +31,10 @@ public class HybridServerServiceConnection {
 				Service service = Service.create(url, name);
 				HybridServerService hybridServerService = service.getPort(HybridServerService.class);
 				toret.put(serverConfiguration, hybridServerService);
-				
-			} catch (MalformedURLException | WebServiceException  e) {
-				System.out.println("Error conectando con un servidor " + serverConfiguration.getName());
+			} catch (MalformedURLException e) {
+				System.out.println("Malformed URL Error: " + serverConfiguration.getName());
+			} catch (WebServiceException e) {
+				System.out.println("Server Connection Error: " + serverConfiguration.getName());
 			}
 		}
 
@@ -43,5 +44,5 @@ public class HybridServerServiceConnection {
 	public List<ServerConfiguration> getServers() {
 		return servers;
 	}
-	
+
 }

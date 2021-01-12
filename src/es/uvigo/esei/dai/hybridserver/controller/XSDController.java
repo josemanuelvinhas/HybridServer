@@ -1,6 +1,7 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,20 +15,24 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
+import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
+import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 import es.uvigo.esei.dai.hybridserver.ws.HybridServerService;
 import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class XSDController {
 
 	private HTTPRequest request;
-	private DAO<Document> dao;
+	private DAO<Document> daoXSD;
+	private DAO<DocumentXSLT> daoXSLT;
 	private HybridServerServiceConnection hybridServerServiceConnection;
 
 	public XSDController(DB db, HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
 		this.hybridServerServiceConnection = hybridServerServiceConnection;
-		this.dao = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
+		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
+		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
 	}
 
 	public HTTPResponse getResponse() {
@@ -64,13 +69,13 @@ public class XSDController {
 			try {
 				boolean isDeleted = false;
 
-				//Borrado local
-				if (dao.get(uuid) != null) {
-					dao.delete(uuid);
+				// Borrado local
+				if (daoXSD.get(uuid) != null) {
+					daoXSD.delete(uuid);
 					isDeleted = true;
 				}
-				
-				//Borrado P2P
+
+				// Borrado P2P
 				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 						.getConnection();
 
@@ -84,9 +89,10 @@ public class XSDController {
 						isDeleted = true;
 					}
 				}
-				
+
 				// Si la pagina se ha borrado de algun servidor
 				if (isDeleted) {
+
 					response.setContent(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -116,8 +122,8 @@ public class XSDController {
 				String uuid;
 				do {
 					uuid = UUID.randomUUID().toString();
-				} while (dao.get(uuid) != null);
-				dao.insert(new Document(uuid, xsd));
+				} while (daoXSD.get(uuid) != null);
+				daoXSD.insert(new Document(uuid, xsd));
 
 				response.setContent(new StringBuilder(
 						"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><a href=\"xsd?uuid=")
@@ -143,12 +149,12 @@ public class XSDController {
 		if (uuid != null) { // Si se pasa el parametro uuid
 			Document document;
 			try {
-				if ((document = dao.get(uuid)) != null) {// Se solicita el contenido del UUID y si existe se devuelve
+				if ((document = daoXSD.get(uuid)) != null) {// Se solicita el contenido del UUID y si existe se devuelve
 															// dicho contenido
 					response.setContent(document.getContent());
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
 					response.setStatus(HTTPResponseStatus.S200);
-					
+
 				} else { // Se busca en el resto de servidores
 					Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 							.getConnection();
@@ -158,17 +164,18 @@ public class XSDController {
 					HybridServerService hybridServerService;
 					while (servers.hasNext() && document == null) {
 						if ((hybridServerService = serversConnection.get(servers.next())) != null
-								&& (document = hybridServerService.getXSD(uuid)) != null);
+								&& (document = hybridServerService.getXSD(uuid)) != null)
+							;
 					}
 
 					if (document != null) { // Si existe se devuelve el contenido
 
-						dao.insert(document); //Caché
+						daoXSD.insert(document); // Caché
 
 						response.setContent(document.getContent());
 						response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
 						response.setStatus(HTTPResponseStatus.S200);
-						
+
 					} else { // Si no existe se devuelve un ERROR 404
 						response.setStatus(HTTPResponseStatus.S404);
 					}
@@ -185,12 +192,12 @@ public class XSDController {
 			try {
 				content.append("<h3>Local Host</h3>");
 				content.append("<ul>");
-				for (Document page : dao.listPages()) {
+				for (Document page : daoXSD.listPages()) {
 					content.append("<li><a href=\"/xsd?uuid=").append(page.getUUID()).append("\">")
 							.append(page.getUUID()).append("</a></li>");
 				}
 				content.append("</ul>");
-				
+
 				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 						.getConnection();
 
@@ -202,8 +209,8 @@ public class XSDController {
 					if (hybridServerService != null) {
 						content.append("<ul>");
 						for (Document page : hybridServerService.listPagesXSD()) {
-							content.append("<li><a href=\"/xsd?uuid=").append(page.getUUID()).append("\">").append(page.getUUID())
-									.append("</a></li>");
+							content.append("<li><a href=\"/xsd?uuid=").append(page.getUUID()).append("\">")
+									.append(page.getUUID()).append("</a></li>");
 						}
 						content.append("</ul>");
 					}

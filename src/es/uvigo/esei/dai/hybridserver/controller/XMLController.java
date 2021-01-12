@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.ws.WebServiceException;
 
 import org.xml.sax.SAXException;
 
@@ -84,8 +85,8 @@ public class XMLController {
 					daoXML.delete(uuid);
 					isDeleted = true;
 				}
-				
-				//Borrado P2P
+
+				// Borrado P2P
 				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 						.getConnection();
 
@@ -93,10 +94,15 @@ public class XMLController {
 
 				HybridServerService hybridServerService;
 				while (servers.hasNext()) {
-					if ((hybridServerService = serversConnection.get(servers.next())) != null
-							&& hybridServerService.getXML(uuid) != null) {
-						hybridServerService.deleteXML(uuid);
-						isDeleted = true;
+					ServerConfiguration serverConfiguration = servers.next();
+					try {
+						if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+								&& hybridServerService.getXML(uuid) != null) {
+							hybridServerService.deleteXML(uuid);
+							isDeleted = true;
+						}
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + serverConfiguration.getName());
 					}
 				}
 
@@ -157,9 +163,9 @@ public class XMLController {
 		if (uuid != null) { // Si se pasa el parametro uuid
 			Document document;
 			try {
-				
-				if ((document = daoXML.get(uuid)) == null) {//Si el documento no esta en local se busca en remoto
-					
+
+				if ((document = daoXML.get(uuid)) == null) {// Si el documento no esta en local se busca en remoto
+
 					Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 							.getConnection();
 
@@ -169,13 +175,11 @@ public class XMLController {
 					while (servers.hasNext() && document == null) {
 						if ((hybridServerService = serversConnection.get(servers.next())) != null
 								&& (document = hybridServerService.getXML(uuid)) != null) {
-							daoXML.insert(document);//Caché XML
+							daoXML.insert(document);// Caché XML
 						}
 					}
 				}
-				
-				
-				
+
 				if (document != null) {// Si existe el XML
 					String xsltUUID = request.getResourceParameters().get("xslt");
 
@@ -186,42 +190,56 @@ public class XMLController {
 
 					} else {// Si se pasa xslt se obtiene
 
-						DocumentXSLT documentoXSLT; 
+						DocumentXSLT documentoXSLT;
 						Document documentoXSD = null;
-						
-						if((documentoXSLT = daoXSLT.get(xsltUUID)) == null) {
-							//Buscar XSLT en remoto
+
+						if ((documentoXSLT = daoXSLT.get(xsltUUID)) == null) { // Si no existe XSLT en local
+							// Buscar XSLT en remoto
 							Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 									.getConnection();
 
-							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers()
+									.iterator();
 
 							HybridServerService hybridServerService;
 							while (servers.hasNext() && documentoXSLT == null) {
 								if ((hybridServerService = serversConnection.get(servers.next())) != null
-										&& (documentoXSLT = hybridServerService.getXSLT(uuid)) != null) {
-									this.daoXSLT.insert(documentoXSLT);//Caché
+										&& (documentoXSLT = hybridServerService.getXSLT(xsltUUID)) != null) {
+									this.daoXSLT.insert(documentoXSLT);// Caché
 								}
 							}
 						}
-						
-						if(documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) == null) {
-							//Buscar XSD en remoto
+
+						if (documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) == null) { // Si
+																													// existe
+																													// el
+																													// XSLT
+																													// y
+																													// no
+																													// se
+																													// encontro
+																													// el
+																													// XSD
+																													// en
+																													// local
+							// Buscar XSD en remoto
 							Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 									.getConnection();
 
-							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers().iterator();
+							Iterator<ServerConfiguration> servers = this.hybridServerServiceConnection.getServers()
+									.iterator();
 
 							HybridServerService hybridServerService;
 							while (servers.hasNext() && documentoXSD == null) {
 								if ((hybridServerService = serversConnection.get(servers.next())) != null
-										&& (documentoXSD = hybridServerService.getXSD(uuid)) != null) {
-									this.daoXSD.insert(documentoXSD);//Caché
+										&& (documentoXSD = hybridServerService
+												.getXSD(documentoXSLT.getXsd())) != null) {
+									this.daoXSD.insert(documentoXSD);// Caché
 								}
 							}
 						}
 
-						if (documentoXSLT != null && documentoXSD != null) {
+						if (documentoXSLT != null && documentoXSD != null) { // Si existe XSLT y XSD
 							try {
 								ParsingUtils.validateStringXMLWithStringXSD(document.getContent(),
 										documentoXSD.getContent());
@@ -232,11 +250,10 @@ public class XMLController {
 								response.setContent(resultHTML);
 								response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 								response.setStatus(HTTPResponseStatus.S200);
-								// En caso de error validando se devuelve ERROR 400
-							} catch (ParserConfigurationException | SAXException | IOException e) {
+								// En caso de error validando o transformando se devuelve ERROR 400
+							} catch (ParserConfigurationException | SAXException | IOException
+									| TransformerException e) {
 								response.setStatus(HTTPResponseStatus.S400);
-							} catch (TransformerException e) {
-								// TODO Ver que error devolver en caso de MALA TRANSFORMACION
 							}
 						} else {
 							response.setStatus(HTTPResponseStatus.S404);

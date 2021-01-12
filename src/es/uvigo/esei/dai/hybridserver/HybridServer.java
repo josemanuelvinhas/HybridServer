@@ -20,7 +20,7 @@ public class HybridServer {
 	private static final String DB_URL = "jdbc:mysql://localhost:3306/hstestdb";
 	private static final String DB_USER = "hsdb";
 	private static final String DB_PASSWORD = "hsdbpass";
-	private static final String WEB_SERVICE_URL = null; //TODO preguntar url por defecto
+	private static final String WEB_SERVICE_URL = null;
 
 	private Thread serverThread;
 	private ExecutorService threadPool;
