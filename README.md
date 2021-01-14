@@ -52,5 +52,3 @@ grant all privileges on hstestdb.* to hsdb@localhost identified by "hsdbpass";
 
 * **José Manuel Viñas Cid** -  [josemanuelvinhas](https://github.com/josemanuelvinhas)
 * **Yomar Costa Orellana** - [Yomiquesh](https://github.com/Yomiquesh)
-
-

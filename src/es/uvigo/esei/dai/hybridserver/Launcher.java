@@ -1,8 +1,6 @@
 package es.uvigo.esei.dai.hybridserver;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Properties;
+import java.io.File;
 
 public class Launcher {
 	public static void main(String[] args) {
@@ -12,21 +10,18 @@ public class Launcher {
 
 		} else if (args.length == 1) {
 
-			Properties properties = new Properties();
-
-			try (FileReader fr = new FileReader(args[0])) {
-
-				properties.load(fr);
-				new HybridServer(properties).start();
-
-			} catch (IOException e) {
-				System.out.println("Error: loading properties error");
+			File configuration = new File(args[0]);
+			try {
+				Configuration conf = new XMLConfigurationLoader().load(configuration);
+				new HybridServer(conf).start();
 			} catch (RuntimeException e) {
+				System.out.println(e.getMessage());
+			} catch (Exception e) {
 				System.out.println(e.getMessage());
 			}
 
-		}else {
-			System.out.println("Error (one argument max) try: java Launcher [Properties File Path]");
+		} else {
+			System.out.println("Error (one argument max) try: java Launcher [Configuration File Path]");
 		}
 
 	}

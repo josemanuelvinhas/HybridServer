@@ -5,16 +5,17 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-import es.uvigo.esei.dai.hybridserver.dao.DAO;
+import es.uvigo.esei.dai.hybridserver.controller.Controller;
+import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
 public class HybridServerServiceThread implements Runnable {
 
 	private Socket socket;
-	private DAO dao;
+	private Configuration configuration;
 
-	public HybridServerServiceThread(Socket socket, DAO dao) {
+	public HybridServerServiceThread(Socket socket, Configuration configuration) {
 		this.socket = socket;
-		this.dao = dao;
+		this.configuration = configuration;
 	}
 
 	@Override
@@ -23,8 +24,10 @@ public class HybridServerServiceThread implements Runnable {
 				InputStreamReader isr = new InputStreamReader(socket.getInputStream());
 				OutputStreamWriter osr = new OutputStreamWriter(socket.getOutputStream())) {
 
-			Controller controller = new Controller(isr, this.dao);
-			controller.getResponse().print(osr);
+			new Controller(isr, osr,
+					new DB(configuration.getDbURL(), configuration.getDbUser(), configuration.getDbPassword()),
+					new HybridServerServiceConnection(configuration.getServers()))
+							.printResponse();
 
 		} catch (IOException e) {
 			System.out.println("Error serving a client");

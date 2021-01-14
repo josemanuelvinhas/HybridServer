@@ -18,11 +18,28 @@
 package es.uvigo.esei.dai.hybridserver;
 
 import java.io.File;
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
+
+import es.uvigo.esei.dai.hybridserver.parser.ConfigurationContentHandler;
+import es.uvigo.esei.dai.hybridserver.parser.ParsingUtils;
 
 public class XMLConfigurationLoader {
-	public Configuration load(File xmlFile)
-	throws Exception {
-		// Implementar en la semana 9. 
-		return null;
+
+	public Configuration load(File xmlFile) throws Exception {
+
+		ConfigurationContentHandler contendHandler = new ConfigurationContentHandler();
+
+		try {
+			ParsingUtils.parseAndValidateWithExternalXSD(xmlFile, "configuration.xsd", contendHandler);
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			throw new Exception("Configuration parsing error", e);
+		}
+
+		return contendHandler.getConfiguration();
 	}
+
 }
