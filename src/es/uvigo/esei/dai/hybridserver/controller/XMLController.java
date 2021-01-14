@@ -173,9 +173,14 @@ public class XMLController {
 
 					HybridServerService hybridServerService;
 					while (servers.hasNext() && document == null) {
-						if ((hybridServerService = serversConnection.get(servers.next())) != null
-								&& (document = hybridServerService.getXML(uuid)) != null) {
-							daoXML.insert(document);// Caché XML
+						ServerConfiguration serverConfiguration = servers.next();
+						try {
+							if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+									&& (document = hybridServerService.getXML(uuid)) != null) {
+								daoXML.insert(document);// Caché XML
+							}
+						} catch (WebServiceException e) {
+							System.out.println("Server Connection Error: " + serverConfiguration.getName());
 						}
 					}
 				}
@@ -203,25 +208,20 @@ public class XMLController {
 
 							HybridServerService hybridServerService;
 							while (servers.hasNext() && documentoXSLT == null) {
-								if ((hybridServerService = serversConnection.get(servers.next())) != null
-										&& (documentoXSLT = hybridServerService.getXSLT(xsltUUID)) != null) {
-									this.daoXSLT.insert(documentoXSLT);// Caché
+								ServerConfiguration serverConfiguration = servers.next();
+								try {
+									if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+											&& (documentoXSLT = hybridServerService.getXSLT(xsltUUID)) != null) {
+										this.daoXSLT.insert(documentoXSLT);// Caché
+									}
+								} catch (WebServiceException e) {
+									System.out.println("Server Connection Error: " + serverConfiguration.getName());
 								}
 							}
 						}
 
-						if (documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) == null) { // Si
-																													// existe
-																													// el
-																													// XSLT
-																													// y
-																													// no
-																													// se
-																													// encontro
-																													// el
-																													// XSD
-																													// en
-																													// local
+						// Si existe el XSLT y no se encontro el XSD en local
+						if (documentoXSLT != null && (documentoXSD = daoXSD.get(documentoXSLT.getXsd())) == null) {
 							// Buscar XSD en remoto
 							Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 									.getConnection();
@@ -231,10 +231,15 @@ public class XMLController {
 
 							HybridServerService hybridServerService;
 							while (servers.hasNext() && documentoXSD == null) {
-								if ((hybridServerService = serversConnection.get(servers.next())) != null
-										&& (documentoXSD = hybridServerService
-												.getXSD(documentoXSLT.getXsd())) != null) {
-									this.daoXSD.insert(documentoXSD);// Caché
+								ServerConfiguration serverConfiguration = servers.next();
+								try {
+									if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+											&& (documentoXSD = hybridServerService
+													.getXSD(documentoXSLT.getXsd())) != null) {
+										this.daoXSD.insert(documentoXSD);// Caché
+									}
+								} catch (WebServiceException e) {
+									System.out.println("Server Connection Error: " + serverConfiguration.getName());
 								}
 							}
 						}
@@ -285,18 +290,23 @@ public class XMLController {
 						.getConnection();
 
 				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
-					content.append("<h3>" + server.getName() + "</h3>");
+					try {
+						content.append("<h3>" + server.getName() + "</h3>");
 
-					HybridServerService hybridServerService = serversConnection.get(server);
+						HybridServerService hybridServerService = serversConnection.get(server);
 
-					if (hybridServerService != null) {
-						content.append("<ul>");
-						for (Document page : hybridServerService.listPagesXML()) {
-							content.append("<li><a href=\"/xml?uuid=").append(page.getUUID()).append("\">")
-									.append(page.getUUID()).append("</a></li>");
+						if (hybridServerService != null) {
+							content.append("<ul>");
+							for (Document page : hybridServerService.listPagesXML()) {
+								content.append("<li><a href=\"/xml?uuid=").append(page.getUUID()).append("\">")
+										.append(page.getUUID()).append("</a></li>");
+							}
+							content.append("</ul>");
 						}
-						content.append("</ul>");
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + server.getName());
 					}
+
 				}
 
 				content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");

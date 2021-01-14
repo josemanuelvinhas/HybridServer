@@ -32,17 +32,13 @@ public class XMLConfigurationLoader {
 	public Configuration load(File xmlFile) throws Exception {
 
 		ConfigurationContentHandler contendHandler = new ConfigurationContentHandler();
-		
+
 		try {
-			
-			//Funciona con validacion Externa pero no con Interna
-			ParsingUtils.parseAndValidateWithExternalXSD(xmlFile,"configuration.xsd", contendHandler);
-			
-			//parseAndValidateWithInternalXSD(xmlFile, contendHandler);
+			ParsingUtils.parseAndValidateWithExternalXSD(xmlFile, "configuration.xsd", contendHandler);
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			throw new Exception("Configuration parsing error", e);
 		}
-		
+
 		return contendHandler.getConfiguration();
 	}
 

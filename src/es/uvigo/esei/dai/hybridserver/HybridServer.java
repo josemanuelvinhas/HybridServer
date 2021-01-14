@@ -93,10 +93,7 @@ public class HybridServer {
 
 	public void start() {
 
-		if(this.configuration.getWebServiceURL() != null) {
-			endpoint = Endpoint.publish(this.configuration.getWebServiceURL(),
-					new HybridServerServiceImpl(this.configuration));
-		}
+		
 
 		this.serverThread = new Thread() {
 			@Override
@@ -104,6 +101,14 @@ public class HybridServer {
 				try (final ServerSocket serverSocket = new ServerSocket(configuration.getHttpPort())) {
 
 					threadPool = Executors.newFixedThreadPool(configuration.getNumClients());
+					
+					if(configuration.getWebServiceURL() != null) {
+						//Publicar los WS
+						endpoint = Endpoint.publish(configuration.getWebServiceURL(),
+								new HybridServerServiceImpl(configuration));
+						//Utilizar el mismo pool que para las peticiones
+						endpoint.setExecutor(threadPool);
+					}
 
 					while (true) {
 						Socket socket = serverSocket.accept();

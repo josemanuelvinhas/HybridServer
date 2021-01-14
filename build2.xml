@@ -9,7 +9,7 @@
 
 	<!-- Poned el número de grupo correcto en esta propiedad -->
 	<!-- En el caso de trabajos individuales, cambiar X.Y por el DNI -->
-	<property name="group" value="Grupo.X.Y"/>
+	<property name="group" value="Grupo.1.3"/>
 
 	<property name="report.file" value="test.report"/>
 	<property name="report.dir" location="report"/>

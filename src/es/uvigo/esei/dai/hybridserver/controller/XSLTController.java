@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.xml.ws.WebServiceException;
+
 import es.uvigo.esei.dai.hybridserver.DB;
 import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
@@ -67,14 +69,14 @@ public class XSLTController {
 		if ((uuid = request.getResourceParameters().get("uuid")) != null) { // Si la petición contiene el uuid
 			try {
 				boolean isDeleted = false;
-				
-				//Borrado local
+
+				// Borrado local
 				if (daoXSLT.get(uuid) != null) {
 					daoXSLT.delete(uuid);
 					isDeleted = true;
 				}
-				
-				//Borrado P2P
+
+				// Borrado P2P
 				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 						.getConnection();
 
@@ -82,15 +84,20 @@ public class XSLTController {
 
 				HybridServerService hybridServerService;
 				while (servers.hasNext()) {
-					if ((hybridServerService = serversConnection.get(servers.next())) != null
-							&& hybridServerService.getXSLT(uuid) != null) {
-						hybridServerService.deleteXSLT(uuid);
-						isDeleted = true;
+					ServerConfiguration serverConfiguration = servers.next();
+					try {
+						if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+								&& hybridServerService.getXSLT(uuid) != null) {
+							hybridServerService.deleteXSLT(uuid);
+							isDeleted = true;
+						}
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + serverConfiguration.getName());
 					}
 				}
-				
+
 				// Si la pagina se ha borrado de algun servidor
-				if(isDeleted){
+				if (isDeleted) {
 					response.setContent(
 							"<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><title>Hybrid Server</title></head><body><h1>Hybrid Server</h1><p>La pagina ha sido eliminada</p><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
 					response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
@@ -166,21 +173,27 @@ public class XSLTController {
 
 					HybridServerService hybridServerService;
 					while (servers.hasNext() && document == null) {
-						if ((hybridServerService = serversConnection.get(servers.next())) != null
-								&& (document = hybridServerService.getXSLT(uuid)) != null);
+						ServerConfiguration serverConfiguration = servers.next();
+						try {
+							if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+									&& (document = hybridServerService.getXSLT(uuid)) != null)
+								;
+						} catch (WebServiceException e) {
+							System.out.println("Server Connection Error: " + serverConfiguration.getName());
+						}
 					}
-					
-					if(document != null) {
-						
-						daoXSLT.insert(document);//Caché XSLT
-						
+
+					if (document != null) {
+
+						daoXSLT.insert(document);// Caché XSLT
+
 						response.setContent(document.getContent());
 						response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.APPLICATION_XML.getMime());
 						response.setStatus(HTTPResponseStatus.S200);
-					}else{// Si no existe se devuelve un ERROR 404
+					} else {// Si no existe se devuelve un ERROR 404
 						response.setStatus(HTTPResponseStatus.S404);
 					}
-					
+
 				}
 			} catch (RuntimeException e) { // Si hay un error en la consulta a la BD se devuelve un error 500
 				response.setStatus(HTTPResponseStatus.S500);
@@ -199,22 +212,27 @@ public class XSLTController {
 							.append(page.getUUID()).append("</a></li>");
 				}
 				content.append("</ul>");
-				
+
 				Map<ServerConfiguration, HybridServerService> serversConnection = this.hybridServerServiceConnection
 						.getConnection();
 
 				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
-					content.append("<h3>" + server.getName() + "</h3>");
+					try {
 
-					HybridServerService hybridServerService = serversConnection.get(server);
+						content.append("<h3>" + server.getName() + "</h3>");
 
-					if (hybridServerService != null) {
-						content.append("<ul>");
-						for (DocumentXSLT page : hybridServerService.listPagesXSLT()) {
-							content.append("<li><a href=\"/xslt?uuid=").append(page.getUUID()).append("\">").append(page.getUUID())
-									.append("</a></li>");
+						HybridServerService hybridServerService = serversConnection.get(server);
+
+						if (hybridServerService != null) {
+							content.append("<ul>");
+							for (DocumentXSLT page : hybridServerService.listPagesXSLT()) {
+								content.append("<li><a href=\"/xslt?uuid=").append(page.getUUID()).append("\">")
+										.append(page.getUUID()).append("</a></li>");
+							}
+							content.append("</ul>");
 						}
-						content.append("</ul>");
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + server.getName());
 					}
 
 				}

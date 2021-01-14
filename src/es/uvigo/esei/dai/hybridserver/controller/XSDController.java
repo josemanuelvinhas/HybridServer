@@ -1,9 +1,10 @@
 package es.uvigo.esei.dai.hybridserver.controller;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import javax.xml.ws.WebServiceException;
 
 import es.uvigo.esei.dai.hybridserver.DB;
 import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
@@ -15,9 +16,7 @@ import es.uvigo.esei.dai.hybridserver.http.HTTPResponseStatus;
 import es.uvigo.esei.dai.hybridserver.http.MIME;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO;
 import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSD;
-import es.uvigo.esei.dai.hybridserver.model.dao.DAO_XSLT;
 import es.uvigo.esei.dai.hybridserver.model.entity.Document;
-import es.uvigo.esei.dai.hybridserver.model.entity.DocumentXSLT;
 import es.uvigo.esei.dai.hybridserver.ws.HybridServerService;
 import es.uvigo.esei.dai.hybridserver.ws.HybridServerServiceConnection;
 
@@ -25,14 +24,12 @@ public class XSDController {
 
 	private HTTPRequest request;
 	private DAO<Document> daoXSD;
-	private DAO<DocumentXSLT> daoXSLT;
 	private HybridServerServiceConnection hybridServerServiceConnection;
 
 	public XSDController(DB db, HybridServerServiceConnection hybridServerServiceConnection, HTTPRequest request) {
 		this.request = request;
 		this.hybridServerServiceConnection = hybridServerServiceConnection;
 		this.daoXSD = new DAO_XSD(db.getUrl(), db.getUser(), db.getPassword());
-		this.daoXSLT = new DAO_XSLT(db.getUrl(), db.getUser(), db.getPassword());
 	}
 
 	public HTTPResponse getResponse() {
@@ -83,10 +80,15 @@ public class XSDController {
 
 				HybridServerService hybridServerService;
 				while (servers.hasNext()) {
-					if ((hybridServerService = serversConnection.get(servers.next())) != null
-							&& hybridServerService.getXSD(uuid) != null) {
-						hybridServerService.deleteXSD(uuid);
-						isDeleted = true;
+					ServerConfiguration serverConfiguration = servers.next();
+					try {
+						if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+								&& hybridServerService.getXSD(uuid) != null) {
+							hybridServerService.deleteXSD(uuid);
+							isDeleted = true;
+						}
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + serverConfiguration.getName());
 					}
 				}
 
@@ -163,9 +165,14 @@ public class XSDController {
 
 					HybridServerService hybridServerService;
 					while (servers.hasNext() && document == null) {
-						if ((hybridServerService = serversConnection.get(servers.next())) != null
-								&& (document = hybridServerService.getXSD(uuid)) != null)
-							;
+						ServerConfiguration serverConfiguration = servers.next();
+						try {
+							if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+									&& (document = hybridServerService.getXSD(uuid)) != null)
+								;
+						} catch (WebServiceException e) {
+							System.out.println("Server Connection Error: " + serverConfiguration.getName());
+						}
 					}
 
 					if (document != null) { // Si existe se devuelve el contenido
@@ -202,19 +209,22 @@ public class XSDController {
 						.getConnection();
 
 				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
-					content.append("<h3>" + server.getName() + "</h3>");
+					try {
+						content.append("<h3>" + server.getName() + "</h3>");
 
-					HybridServerService hybridServerService = serversConnection.get(server);
+						HybridServerService hybridServerService = serversConnection.get(server);
 
-					if (hybridServerService != null) {
-						content.append("<ul>");
-						for (Document page : hybridServerService.listPagesXSD()) {
-							content.append("<li><a href=\"/xsd?uuid=").append(page.getUUID()).append("\">")
-									.append(page.getUUID()).append("</a></li>");
+						if (hybridServerService != null) {
+							content.append("<ul>");
+							for (Document page : hybridServerService.listPagesXSD()) {
+								content.append("<li><a href=\"/xsd?uuid=").append(page.getUUID()).append("\">")
+										.append(page.getUUID()).append("</a></li>");
+							}
+							content.append("</ul>");
 						}
-						content.append("</ul>");
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + server.getName());
 					}
-
 				}
 
 				content.append("</ul><p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");

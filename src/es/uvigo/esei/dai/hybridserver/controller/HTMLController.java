@@ -4,6 +4,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.xml.ws.WebServiceException;
+
 import es.uvigo.esei.dai.hybridserver.DB;
 import es.uvigo.esei.dai.hybridserver.ServerConfiguration;
 import es.uvigo.esei.dai.hybridserver.http.HTTPHeaders;
@@ -79,18 +81,24 @@ public class HTMLController {
 
 					HybridServerService hybridServerService;
 					while (servers.hasNext() && document == null) {
-						if ((hybridServerService = serversConnection.get(servers.next())) != null
-								&& (document = hybridServerService.getHTML(uuid)) != null);
+						ServerConfiguration serverConfiguration = servers.next();
+						try {
+							if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+									&& (document = hybridServerService.getHTML(uuid)) != null)
+								;
+						} catch (WebServiceException e) {
+							System.out.println("Server Connection Error: " + serverConfiguration.getName());
+						}
 					}
 
 					if (document != null) { // Si existe se devuelve el contenido
 
-						dao.insert(document); //Caché
+						dao.insert(document); // Caché
 
 						response.setContent(document.getContent());
 						response.putParameter(HTTPHeaders.CONTENT_TYPE.getHeader(), MIME.TEXT_HTML.getMime());
 						response.setStatus(HTTPResponseStatus.S200);
-						
+
 					} else { // Si no existe se devuelve un ERROR 404
 						response.setStatus(HTTPResponseStatus.S404);
 					}
@@ -117,19 +125,22 @@ public class HTMLController {
 						.getConnection();
 
 				for (ServerConfiguration server : this.hybridServerServiceConnection.getServers()) {
-					content.append("<h3>" + server.getName() + "</h3>");
+					try {
+						content.append("<h3>" + server.getName() + "</h3>");
 
-					HybridServerService hybridServerService = serversConnection.get(server);
+						HybridServerService hybridServerService = serversConnection.get(server);
 
-					if (hybridServerService != null) {
-						content.append("<ul>");
-						for (Document page : hybridServerService.listPagesHTML()) {
-							content.append("<li><a href=\"/html?uuid=").append(page.getUUID()).append("\">").append(page.getUUID())
-									.append("</a></li>");
+						if (hybridServerService != null) {
+							content.append("<ul>");
+							for (Document page : hybridServerService.listPagesHTML()) {
+								content.append("<li><a href=\"/html?uuid=").append(page.getUUID()).append("\">")
+										.append(page.getUUID()).append("</a></li>");
+							}
+							content.append("</ul>");
 						}
-						content.append("</ul>");
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + server.getName());
 					}
-
 				}
 
 				content.append("<p>Authors: Yomar Costa Orellana &amp; José Manuel Viñas Cid</p></body></html>");
@@ -199,10 +210,15 @@ public class HTMLController {
 
 				HybridServerService hybridServerService;
 				while (servers.hasNext()) {
-					if ((hybridServerService = serversConnection.get(servers.next())) != null
-							&& hybridServerService.getHTML(uuid) != null) {
-						hybridServerService.deleteHTML(uuid);
-						isDeleted = true;
+					ServerConfiguration serverConfiguration = servers.next();
+					try {
+						if ((hybridServerService = serversConnection.get(serverConfiguration)) != null
+								&& hybridServerService.getHTML(uuid) != null) {
+							hybridServerService.deleteHTML(uuid);
+							isDeleted = true;
+						}
+					} catch (WebServiceException e) {
+						System.out.println("Server Connection Error: " + serverConfiguration.getName());
 					}
 				}
 
