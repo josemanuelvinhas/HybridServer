@@ -3,10 +3,6 @@ Servidor Híbrido de Documentos Estructurados desarrollado en la asignatura DAI 
 
 Este proyecto consistirá en el desarrollo de un sistema híbrido cliente/servidor y P2P para la gestión de documentos estructurados (HTML y XML)
 
-### Características :clipboard:
-
-_TODO_
-
 ### Base de datos
 
 Se usa el SGBD _MariaDB 10.4.14_ de [XAMPP](https://www.apachefriends.org/). A través de _phpMyAdmin_ se puede crear la base de datos usando el siguiente script:
